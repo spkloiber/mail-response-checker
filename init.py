@@ -9,8 +9,9 @@ import smtplib
 import os.path
 import time
 
+config_filename = 'config.cfg'
 config = configparser.ConfigParser()
-config.read('config.cfg')
+config.read(config_filename)
 
 engine = create_engine('sqlite:///' + config.get('DB', 'file'))
 base = declarative_base(bind=engine)
@@ -54,7 +55,8 @@ conn_imap = imaplib.IMAP4_SSL(config.get('Imap', 'hostname'))
 conn_imap.login(config.get('Imap', 'username'), config.get('Imap', 'password'))
 conn_imap.select(config.get('Imap', 'mailbox'))
 
-conn_smtp = smtplib.SMTP_SSL(config.get('Smtp', 'hostname'))
+conn_smtp = smtplib.SMTP(config.get('Smtp', 'hostname'), int(config.get('Smtp', 'port')))
+conn_smtp.starttls()
 conn_smtp.esmtp_features["auth"] = "LOGIN PLAIN"
 conn_smtp.login(config.get('Smtp', 'username'), config.get('Smtp', 'password'))
 

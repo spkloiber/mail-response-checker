@@ -4,6 +4,66 @@ from datetime import timedelta
 import re
 import imaplib
 from email.mime.text import MIMEText
+import time
+
+########################################################################################################################
+def get_id(data):
+    return re.search('Message-ID: <(.*?)>', data[0][1].decode('utf-8'), re.IGNORECASE).group(1)
+
+def get_sender(data):
+    sender_tmp = re.search('From:.*?[< ]([^\s]*@[^\s]*)>?', data[0][1].decode('utf-8'), re.IGNORECASE)
+    if sender_tmp != None:
+        return sender_tmp.group(1)
+    else:
+        return None
+    
+def get_receiver(data):
+    return re.search('To:.*?[< ]([^\s]*@[^\s]*)>?', data[0][1].decode('utf-8'), re.IGNORECASE).group(1)
+
+def get_subject(data):
+    return re.search('Subject: ([^\n\r]*)', data[0][1].decode('utf-8'), re.IGNORECASE).group(1)
+    
+def get_in_reply_to(data):
+    in_reply_to_tmp = re.search('In-Reply-To: <(.*?)>', data[0][1].decode('utf-8'), re.IGNORECASE)
+    if in_reply_to_tmp != None:
+        return in_reply_to_tmp.group(1)
+    else:
+        return None
+
+def get_sent_on(data):
+    return datetime.datetime(*imaplib.Internaldate2tuple(re.search('INTERNALDATE ".*?"', data[0][0].decode('utf-8'))
+                                                            .group(0).encode('utf-8'))[:6])
+                                                            
+                                                            
+########################################################################################################################                                                            
+def execute_command(command):
+    if command == 'updateignore':
+        debug_msg = MIMEText('')
+        debug_msg['Subject'] = init.config.get('Ignore', 'ignore_update_subject')
+        debug_msg['From'] = '<' + init.config.get('Smtp', 'self_mail') + '>'
+        debug_msg['To'] = '<' + init.config.get('Ignore', 'ignore_update_mail') + '>'
+        init.conn_smtp.sendmail(init.config.get('Smtp', 'self_mail'), init.config.get('Ignore', 'ignore_update_mail'), debug_msg.as_string())
+        time.sleep(30)
+        
+        ret, mails = init.conn_imap.search(None, 'UNSEEN', 'FROM '+init.config.get('Smtp', 'mailinglist_owner'), 'TO '+init.config.get('Smtp', 'self_mail'))
+        print (mails)
+        if len(mails[0]) == 0:
+            print ('DID NOT RECEIVE IGNORE')
+            
+        mails = mails[0].decode('utf-8').split(' ')[0]
+        
+        text = init.conn_imap.fetch(mails, 'BODY[TEXT]')
+        init.conn_imap.uid('store', mails, '-FLAGS', '\Seen')
+
+        res = re.search('((?:[^\s]+@[^\s]+\s+)+)', text[1][0][1].decode('utf-8')).group(0) 
+
+        init.config.set('Ignore', 'ignore_auto', re.sub('\s+', ' ', res))
+        
+        print(re.sub('\s+', ' ', res))
+        with open(init.config_filename, 'w') as configfile:
+            init.config.write(configfile)
+
+    
 
 ########################################################################################################################
 def get_new_mails():
@@ -37,12 +97,12 @@ def create_question_from_mail(mail):
     """
     ret, data = init.conn_imap.fetch(mail, '(INTERNALDATE BODY[HEADER.FIELDS (MESSAGE-ID FROM SUBJECT)])')
 
-    id = re.search('Message-ID: <(.*?)>', data[0][1].decode('utf-8'), re.IGNORECASE).group(1)
-    sender = re.search('From: .*?<(.*?)>', data[0][1].decode('utf-8'), re.IGNORECASE).group(1)
-    subject = re.search('Subject: ([^\n\r]*)', data[0][1].decode('utf-8'), re.IGNORECASE).group(1)
+    id = get_id(data)
+    sender = get_sender(data)
+    subject = get_subject(data)
     is_answered = False
-    sent_on = datetime.datetime(*imaplib.Internaldate2tuple(re.search('INTERNALDATE ".*?"', data[0][0].decode('utf-8'))
-                                                            .group(0).encode('utf-8'))[:6])
+    sent_on = get_sent_on(data)
+    
     answered_by = 'NO-ONE'
     answered_on = datetime.datetime(1990, 1, 1)
 
@@ -82,7 +142,8 @@ def get_all_unanswered_long():
 ########################################################################################################################
 def main():
     mails = get_new_mails()
-    ignore = init.config.get('Ignore', 'ignore').split('\n')
+    ignore = init.config.get('Ignore', 'ignore_auto').split(' ')
+    ignore.extend(init.config.get('Ignore', 'ignore_manual').split(' '))
 
     debug = ('Time: %s' % datetime.datetime.now())
 
@@ -93,18 +154,12 @@ def main():
 
         debug += ('Mail: %s\n' % mail)
 
-        ret, data = init.conn_imap.fetch(mail, 'BODY[HEADER.FIELDS (FROM IN-REPLY-TO)]')
-        sender_tmp = re.search('From: .*?<(.*?)>', data[0][1].decode('utf-8'), re.IGNORECASE)
-        if sender_tmp != None:
-            sender = sender_tmp.group(1)
-        else:
-            sender = None
+        ret, data = init.conn_imap.fetch(mail, 'BODY[HEADER.FIELDS (FROM TO SUBJECT IN-REPLY-TO)]')
+        sender = get_sender(data)
+        in_reply_to = get_in_reply_to(data)
+        receiver = get_receiver(data)
+        subject = get_subject(data)
 
-        in_reply_to_tmp = re.search('In-Reply-To: <(.*?)>', data[0][1].decode('utf-8'), re.IGNORECASE)
-        if in_reply_to_tmp != None:
-            in_reply_to = in_reply_to_tmp.group(1)
-        else:
-            in_reply_to = None
         debug += ('Mail: %s; Sender: %s; IN-REPLY-TO: %s\n' % (mail, sender, in_reply_to))
 
         if sender in ignore:
@@ -113,13 +168,16 @@ def main():
                 question = create_question_from_mail(mail)
                 mail_answered(in_reply_to, question)
                 debug += ('Answered: %s; Answerer: %s, %s\n' % (in_reply_to, question.sender, question.id))
-
+            elif receiver == init.config('Smtp', 'self_mail'):
+                debug += ('Command: %s' & subject)
+                execute_command(subject)
+                
         else:
             question = create_question_from_mail(mail)
             add_mail_to_db(question)
             debug += ('Added to DB: %s, %s\n' % (question.sender, question.id))
 
-        init.conn_imap.uid('store', mail, '+FLAGS', '\Seen')
+        init.conn_imap.uid('store', mail, '-FLAGS', '\Seen')
 
     debug_msg = MIMEText(debug)
     debug_msg['Subject'] = 'MAILCHECKER DEBUG'
