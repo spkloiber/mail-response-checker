@@ -54,7 +54,7 @@ def execute_command(command):
             
         mails = mails[0].decode('utf-8').split(' ')[0]
         
-        text = init.conn_imap.fetch(mails, 'BODY[TEXT]')
+        text = init.conn_imap.fetch(mails, 'BODY.PEEK[TEXT]')
         init.conn_imap.uid('store', mails, '+FLAGS', '\Seen')
 
         res = re.search('((?:[^\s]+@[^\s]+\s+)+)', text[1][0][1].decode('utf-8')).group(0) 
@@ -111,7 +111,7 @@ def create_question_from_mail(mail):
 
     :rtype : init.Question
     """
-    ret, data = init.conn_imap.fetch(mail, '(INTERNALDATE BODY[HEADER.FIELDS (MESSAGE-ID FROM SUBJECT)])')
+    ret, data = init.conn_imap.fetch(mail, '(INTERNALDATE BODY.PEEK[HEADER.FIELDS (MESSAGE-ID FROM SUBJECT)])')
 
     id = get_id(data)
     sender = get_sender(data)
@@ -170,7 +170,7 @@ def main():
 
         debug += ('Mail: %s\n' % mail)
 
-        ret, data = init.conn_imap.fetch(mail, 'BODY[HEADER.FIELDS (FROM TO SUBJECT IN-REPLY-TO)]')
+        ret, data = init.conn_imap.fetch(mail, 'BODY.PEEK[HEADER.FIELDS (FROM TO SUBJECT IN-REPLY-TO)]')
         sender = get_sender(data)
         in_reply_to = get_in_reply_to(data)
         receiver = get_receiver(data)
