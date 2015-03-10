@@ -160,7 +160,7 @@ def main():
     ignore = init.config.get('Ignore', 'ignore_auto').split(' ')
     ignore.extend(init.config.get('Ignore', 'ignore_manual').split(' '))
 
-    debug = ('Time: %s, Mails: %s' % datetime.datetime.now(), mails)
+    debug = ('Time: %s, Mails: %s' % (datetime.datetime.now(), mails))
 
     for mail in mails:
         print ('Mail: %s' % mail)
