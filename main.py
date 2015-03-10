@@ -91,7 +91,7 @@ def add_mail_to_db(question):
     
     
 ########################################################################################################################
-def del_mail_from_db(mail_id)
+def del_mail_from_db(mail_id):
     init.session.execute('DELETE FROM questions WHERE id='+mail_id)
 
 
