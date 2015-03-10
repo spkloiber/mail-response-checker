@@ -62,8 +62,8 @@ def execute_command(command):
         init.config.set('Ignore', 'ignore_auto', re.sub('\s+', ' ', res))
         
         print(re.sub('\s+', ' ', res))
-        with open(init.config_filename, 'w') as configfile:
-            init.config.write(configfile)
+        init.save_config()
+        
     elif command.startswith('DELETE: '):
          res = re.search('DELETE: (.*)', command)
          if res != None and len(res.groups()) == 1:
@@ -73,10 +73,7 @@ def execute_command(command):
          res = re.search('ADDIGNORE: (.*)', command)
          if res != None and len(res.groups()) == 1:
             id = res.group(1)
-              
-        
-
-    
+            init.config.set('Ignore', 'ignore_manual', init.config.get('Ignore', 'ignore_manual') + ' ' + id)
 
 ########################################################################################################################
 def get_new_mails():
@@ -163,7 +160,7 @@ def main():
     ignore = init.config.get('Ignore', 'ignore_auto').split(' ')
     ignore.extend(init.config.get('Ignore', 'ignore_manual').split(' '))
 
-    debug = ('Time: %s' % datetime.datetime.now())
+    debug = ('Time: %s, Mails: %s' % datetime.datetime.now(), mails)
 
     for mail in mails:
         print ('Mail: %s' % mail)

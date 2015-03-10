@@ -61,6 +61,11 @@ conn_smtp.esmtp_features["auth"] = "LOGIN PLAIN"
 conn_smtp.login(config.get('Smtp', 'username'), config.get('Smtp', 'password'))
 
 
+########################################################################################################################
+def save_config():
+    with open(config_filename, 'w') as configfile:
+        config.write(configfile)
+
 
 ########################################################################################################################
 def reset_day(string_date = time.strftime("%d-%b-%Y")): # for testing purposes, resets all mails received on date to unseen FORMAT: dd-Mon-YY
