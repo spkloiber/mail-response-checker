@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import init
 import datetime
 from datetime import timedelta
@@ -67,7 +69,11 @@ def execute_command(command):
          if res != None and len(res.groups()) == 1:
             id = res.group(1)
             del_mail_from_db(id)
-            
+    elif command.startswith('ADDIGNORE: '):
+         res = re.search('ADDIGNORE: (.*)', command)
+         if res != None and len(res.groups()) == 1:
+            id = res.group(1)
+              
         
 
     
