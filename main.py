@@ -64,7 +64,7 @@ def execute_command(command):
             init.config.write(configfile)
     elif command.startswith('DELETE: '):
          res = re.search('DELETE: (.*)', command)
-         if res != None && len(res.groups()) == 1:
+         if res != None and len(res.groups()) == 1:
             id = res.group(1)
             del_mail_from_db(id)
             
