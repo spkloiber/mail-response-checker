@@ -29,8 +29,8 @@ class Question(base):
     answered_on = Column(DateTime)
 
     def __repr__(self):
-        return "<Question(id='%s', sender='%s', subject='%s', is_answered='%i', sent_on='%s', answered_by='%s', " \
-               "answered_on='%s')>" % (self.id, self.sender, self.subject, self.is_answered, self.sent_on,
+        return "'%s' Sender: '%s' Subject='%s' Sent_on='%s'\n Is_answered='%i' Answered_by='%s' " \
+               "Answered_on='%s'\n" % (self.id, self.sender, self.subject, self.sent_on, self.is_answered,
                                        self.answered_by, self.answered_on)
 
     def __init__(self, id = '-1', sender = '', subject = '', is_answered = 0, sent_on = datetime.datetime(1990, 1, 1),
@@ -63,9 +63,9 @@ conn_smtp.login(config.get('Smtp', 'username'), config.get('Smtp', 'password'))
 
 
 ########################################################################################################################
-def reset_today(): # for testing purposes, resets all mails received today to unseen
+def reset_day(string_date = time.strftime("%d-%b-%Y")): # for testing purposes, resets all mails received on date to unseen FORMAT: dd-Mon-YY
     # DOING THIS AND NOT CHANGING DATABASE CAN CAUSE UNTESTED BEHAVIOUR
-    ret, data = conn_imap.search(None, "(ON {0})".format(time.strftime("%d-%b-%Y")))
+    ret, data = conn_imap.search(None, "(NOT BEFORE {0})".format(string_date))
     list = data[0].decode('utf-8').split(' ')
 
     for mail in list:

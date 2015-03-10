@@ -11,14 +11,14 @@ def get_id(data):
     return re.search('Message-ID: <(.*?)>', data[0][1].decode('utf-8'), re.IGNORECASE).group(1)
 
 def get_sender(data):
-    sender_tmp = re.search('From:.*?[< ]([^\s]*@[^\s]*)>?', data[0][1].decode('utf-8'), re.IGNORECASE)
+    sender_tmp = re.search('From:.*?[< ]([^\s<]*@[^\s>]*)>?', data[0][1].decode('utf-8'), re.IGNORECASE)
     if sender_tmp != None:
         return sender_tmp.group(1)
     else:
         return None
     
 def get_receiver(data):
-    return re.search('To:.*?[< ]([^\s]*@[^\s]*)>?', data[0][1].decode('utf-8'), re.IGNORECASE).group(1)
+    return re.search('To:.*?[< ]([^\s<]*@[^\s>]*)>?', data[0][1].decode('utf-8'), re.IGNORECASE).group(1)
 
 def get_subject(data):
     return re.search('Subject: ([^\n\r]*)', data[0][1].decode('utf-8'), re.IGNORECASE).group(1)
@@ -53,7 +53,7 @@ def execute_command(command):
         mails = mails[0].decode('utf-8').split(' ')[0]
         
         text = init.conn_imap.fetch(mails, 'BODY[TEXT]')
-        init.conn_imap.uid('store', mails, '-FLAGS', '\Seen')
+        init.conn_imap.uid('store', mails, '+FLAGS', '\Seen')
 
         res = re.search('((?:[^\s]+@[^\s]+\s+)+)', text[1][0][1].decode('utf-8')).group(0) 
 
@@ -62,6 +62,13 @@ def execute_command(command):
         print(re.sub('\s+', ' ', res))
         with open(init.config_filename, 'w') as configfile:
             init.config.write(configfile)
+    elif command.startswith('DELETE: ')
+         res = re.search('DELETE: (.*)', command)
+         if res != None && len(res.groups()) == 1
+            id = res.group(1)
+            del_mail_from_db(id)
+            
+        
 
     
 
@@ -81,6 +88,11 @@ def get_new_mails():
 def add_mail_to_db(question):
     init.session.add(question)
     init.session.commit()
+    
+    
+########################################################################################################################
+def del_mail_from_db(mail_id)
+    init.session.execute('DELETE FROM questions WHERE id='+mail_id)
 
 
 ########################################################################################################################
@@ -168,8 +180,8 @@ def main():
                 question = create_question_from_mail(mail)
                 mail_answered(in_reply_to, question)
                 debug += ('Answered: %s; Answerer: %s, %s\n' % (in_reply_to, question.sender, question.id))
-            elif receiver == init.config('Smtp', 'self_mail'):
-                debug += ('Command: %s' & subject)
+            elif receiver == init.config.get('Smtp', 'self_mail'):
+                debug += ('Command: %s' % subject)
                 execute_command(subject)
                 
         else:
@@ -177,7 +189,7 @@ def main():
             add_mail_to_db(question)
             debug += ('Added to DB: %s, %s\n' % (question.sender, question.id))
 
-        init.conn_imap.uid('store', mail, '-FLAGS', '\Seen')
+        init.conn_imap.uid('store', mail, '+FLAGS', '\Seen')
 
     debug_msg = MIMEText(debug)
     debug_msg['Subject'] = 'MAILCHECKER DEBUG'
@@ -208,7 +220,7 @@ def main():
         mailinglist_msg['Subject'] = '[Bits] ANSWER!'
         mailinglist_msg['From'] = '<' + init.config.get('Smtp', 'self_mail') + '>'
         mailinglist_msg['To'] = '<' + init.config.get('Smtp', 'mailinglist') + '>'
-        init.conn_smtp.sendmail(init.config.get('Smtp', 'self_mail'), init.config.get('Smtp', 'mailinglist'), mailinglist_msg.as_string())
+        init.conn_smtp.sendmail(init.config.get('Smtp', 'self_mail'), init.config.get('Smtp', 'debug_mail'), mailinglist_msg.as_string())
 
     init.conn_imap.logout()
     init.conn_smtp.close()
