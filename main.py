@@ -74,6 +74,7 @@ def execute_command(command):
          if res != None and len(res.groups()) == 1:
             id = res.group(1)
             init.config.set('Ignore', 'ignore_manual', init.config.get('Ignore', 'ignore_manual') + ' ' + id)
+            init.save_config()
 
 ########################################################################################################################
 def get_new_mails():
