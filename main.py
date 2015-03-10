@@ -39,7 +39,7 @@ def get_sent_on(data):
                                                             
 ########################################################################################################################                                                            
 def execute_command(command):
-    if command == 'updateignore':
+    if command == 'UPDATEIGNORE':
         debug_msg = MIMEText('')
         debug_msg['Subject'] = init.config.get('Ignore', 'ignore_update_subject')
         debug_msg['From'] = '<' + init.config.get('Smtp', 'self_mail') + '>'
