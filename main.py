@@ -62,7 +62,7 @@ def execute_command(command):
         print(re.sub('\s+', ' ', res))
         with open(init.config_filename, 'w') as configfile:
             init.config.write(configfile)
-    elif command.startswith('DELETE: ')
+    elif command.startswith('DELETE: '):
          res = re.search('DELETE: (.*)', command)
          if res != None && len(res.groups()) == 1
             id = res.group(1)
