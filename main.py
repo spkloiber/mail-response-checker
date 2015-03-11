@@ -36,7 +36,16 @@ def get_sent_on(data):
     return datetime.datetime(*imaplib.Internaldate2tuple(re.search('INTERNALDATE ".*?"', data[0][0].decode('utf-8'))
                                                             .group(0).encode('utf-8'))[:6])
                                                             
-                                                            
+
+########################################################################################################################
+def get_params(data, command):
+    res = re.search('^%s: (.*)$' % command, data)
+    if res == None:
+        return []
+    
+    return re.split(',\s*', res.group(1))
+    
+    
 ########################################################################################################################                                                            
 def execute_command(command):
     if command == 'UPDATEIGNORE':
@@ -65,14 +74,13 @@ def execute_command(command):
         init.save_config()
         
     elif command.startswith('DELETE: '):
-         res = re.search('DELETE: (.*)', command)
-         if res != None and len(res.groups()) == 1:
-            id = res.group(1)
+         res = get_params(command, 'DELETE')
+         for id in res:
             del_mail_from_db(id)
     elif command.startswith('ADDIGNORE: '):
-         res = re.search('ADDIGNORE: (.*)', command)
-         if res != None and len(res.groups()) == 1:
-            id = res.group(1)
+         res = get_params(command, 'ADDIGNORE')
+         
+        for id in res:
             init.config.set('Ignore', 'ignore_manual', init.config.get('Ignore', 'ignore_manual') + ' ' + id)
             init.save_config()
 
