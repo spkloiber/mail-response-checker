@@ -234,7 +234,7 @@ def main():
     unanswered_long = get_all_unanswered_long()
     if len(unanswered_long) > 0:
         mailinglist_txt = 'List of messages not answered for more than 2 days:\n'
-        for question in unanswered:
+        for question in unanswered_long:
             mailinglist_txt += question.__repr__() + '\n'
 
         mailinglist_msg = MIMEText(mailinglist_txt)
