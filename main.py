@@ -111,6 +111,7 @@ def add_mail_to_db(question):
 ########################################################################################################################
 def del_mail_from_db(mail_id):
     init.session.execute("DELETE FROM questions WHERE id='%s'" % mail_id)
+    init.session.commit()
 
 
 ########################################################################################################################
@@ -175,7 +176,7 @@ def main():
     ignore = init.config.get('Ignore', 'ignore_auto').split(' ')
     ignore.extend(init.config.get('Ignore', 'ignore_manual').split(' '))
 
-    debug = ('Time: %s, Mails: %s' % (datetime.datetime.now(), mails))
+    debug = ('Time: %s, Mails: %s\n' % (datetime.datetime.now(), mails))
 
     for mail in mails:
         print ('Mail: %s, %d' % (mail, len(mail)))
@@ -241,9 +242,7 @@ def main():
         mailinglist_msg['To'] = '<' + init.config.get('Smtp', 'debug_mail') + '>'
         init.conn_smtp.sendmail(init.config.get('Smtp', 'self_mail'), init.config.get('Smtp', 'debug_mail'), mailinglist_msg.as_string())
 
-    init.conn_imap.logout()
-    init.conn_smtp.close()
-    init.session.close()
+
 
 
 # from email.mime.text import MIMEText
