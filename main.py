@@ -36,7 +36,7 @@ def get_mail_entry(name, data):
 	# matches the name followed by a colon and a space, then some stuff until the email starts with either
 	# a space or a smaller than the group mail is called mail the string ends with a greater than if there 
 	# was a smaller, otherwise with nothing
-	return re.search('%s: (?:.|\s)*?(?:(?P<gt><)| )(?P<mail>[^\s<]+@[^\s>]+)(?(gt)>)' % name, data, re.IGNORECASE).group('mail')
+	return re.search('%s:(?:.|\s)*?(?:(?P<gt><)| )(?P<mail>[^\s<]+@[^\s>]+)(?(gt)>)' % name, data, re.IGNORECASE).group('mail')
 
 	
 ########################################################################################################################
