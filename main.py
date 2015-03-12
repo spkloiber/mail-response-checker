@@ -242,7 +242,7 @@ def main():
         mailinglist_msg['To'] = '<' + init.config.get('Smtp', 'debug_mail') + '>'
         init.conn_smtp.sendmail(init.config.get('Smtp', 'self_mail'), init.config.get('Smtp', 'debug_mail'), mailinglist_msg.as_string())
 
-
+    init.close()
 
 
 # from email.mime.text import MIMEText
