@@ -13,15 +13,11 @@ def get_id(data):
     return re.search('Message-ID: <(.*?)>', data[0][1].decode('utf-8'), re.IGNORECASE).group(1)
 
 def get_sender(data):
-    sender_tmp = re.search('From:.*?[< ]([^\s<]*@[^\s>]*)>?', data[0][1].decode('utf-8'), re.IGNORECASE)
-    if sender_tmp != None:
-        return sender_tmp.group(1)
-    else:
-        return None
+    return get_mail_entry('From', data[0][1].decode('utf-8'))
     
 def get_receiver(data):
-    return re.search('To:.*?[< ]([^\s<]*@[^\s>]*)>?', data[0][1].decode('utf-8'), re.IGNORECASE).group(1)
-
+    return get_mail_entry('To', data[0][1].decode('utf-8'))
+	
 def get_subject(data):
     return re.search('Subject: ([^\n\r]*)', data[0][1].decode('utf-8'), re.IGNORECASE).group(1)
     
@@ -36,6 +32,11 @@ def get_sent_on(data):
     return datetime.datetime(*imaplib.Internaldate2tuple(re.search('INTERNALDATE ".*?"', data[0][0].decode('utf-8'))
                                                             .group(0).encode('utf-8'))[:6])
                                                             
+def get_mail_entry(name, data):
+	# matches the name followed by a colon and a space, then some stuff until the email starts with either
+	# a space or a smaller than the group mail is called mail the string ends with a greater than if there 
+	# was a smaller, otherwise with nothing
+	return re.search('%s: (?:.|\s)*?(?:(?P<gt><)| )(?P<mail>[^\s<]+@[^\s>]+)(?(gt)>)' % name, data, re.IGNORECASE).group('mail')
                                                             
 ########################################################################################################################                                                            
 def execute_command(command):
