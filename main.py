@@ -33,7 +33,7 @@ def get_sent_on(data):
                                                             .group(0).encode('utf-8'))[:6])
                                                             
 def get_mail_entry(name, data):
-	# matches the name followed by a colon and a space, then some stuff until the email starts with either
+	# matches the name followed by a colon, then some stuff until the email starts with either
 	# a space or a smaller than the group mail is called mail the string ends with a greater than if there 
 	# was a smaller, otherwise with nothing
 	return re.search('%s:(?:.|\s)*?(?:(?P<gt><)| )(?P<mail>[^\s<]+@[^\s>]+)(?(gt)>)' % name, data, re.IGNORECASE).group('mail')
@@ -178,7 +178,7 @@ def main():
     debug = ('Time: %s, Mails: %s' % (datetime.datetime.now(), mails))
 
     for mail in mails:
-        print ('Mail: %s' % mail)
+        print ('Mail: %s, %d' % (mail, len(mail))
         if len(mail) == 0:
             continue
 
@@ -225,7 +225,7 @@ def main():
     master_msg['Subject'] = '[Bits] DAILY ANSWER STATUS'
     master_msg['From'] = '<' + init.config.get('Smtp', 'self_mail') + '>'
     master_msg['To'] = '<' + init.config.get('Smtp', 'master_mail') + '>'
-    init.conn_smtp.sendmail(init.config.get('Smtp', 'self_mail'), [init.config.get('Smtp', 'master_mail'),init.config.get('Smtp', 'debug_mail')] , master_msg.as_string())
+    init.conn_smtp.sendmail(init.config.get('Smtp', 'self_mail'), [init.config.get('Smtp', 'debug_mail'),init.config.get('Smtp', 'debug_mail')] , master_msg.as_string())
 
 
     unanswered_long = get_all_unanswered_long()
@@ -238,7 +238,7 @@ def main():
         mailinglist_msg['Subject'] = '[Bits] ANSWER!'
         mailinglist_msg['From'] = '<' + init.config.get('Smtp', 'self_mail') + '>'
         mailinglist_msg['To'] = '<' + init.config.get('Smtp', 'mailinglist') + '>'
-        init.conn_smtp.sendmail(init.config.get('Smtp', 'self_mail'), init.config.get('Smtp', 'mailinglist'), mailinglist_msg.as_string())
+        init.conn_smtp.sendmail(init.config.get('Smtp', 'self_mail'), init.config.get('Smtp', 'debug_mail'), mailinglist_msg.as_string())
 
     init.conn_imap.logout()
     init.conn_smtp.close()
