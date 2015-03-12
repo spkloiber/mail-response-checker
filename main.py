@@ -66,7 +66,7 @@ def execute_command(command):
         mails = mails[0].decode('utf-8').split(' ')[0]
         
         text = init.conn_imap.fetch(mails, 'BODY.PEEK[TEXT]')
-        init.conn_imap.uid('store', mails, '+FLAGS', '\Seen')
+        init.conn_imap.store(mails, '+FLAGS', '\Seen')
 
         res = re.search('((?:[^\s]+@[^\s]+\s+)+)', text[1][0][1].decode('utf-8')).group(0) 
 
@@ -208,7 +208,7 @@ def main():
             debug += ('Added to DB: %s, %s\n' % (question.sender, question.id))
 
         print ('Setting seen flag of %s' % mail)
-        init.conn_imap.uid('store', mail, '+FLAGS', '\Seen')
+        init.conn_imap.store(mail, '+FLAGS', '\Seen')
 
     debug_msg = MIMEText(debug)
     debug_msg['Subject'] = 'MAILCHECKER DEBUG'
@@ -225,7 +225,7 @@ def main():
     master_msg = MIMEText(master_txt)
     master_msg['Subject'] = '[Bits] DAILY ANSWER STATUS'
     master_msg['From'] = '<' + init.config.get('Smtp', 'self_mail') + '>'
-    master_msg['To'] = '<' + init.config.get('Smtp', 'master_mail') + '>'
+    master_msg['To'] = '<' + init.config.get('Smtp', 'debug_mail') + '>'
     init.conn_smtp.sendmail(init.config.get('Smtp', 'self_mail'), [init.config.get('Smtp', 'debug_mail'),init.config.get('Smtp', 'debug_mail')] , master_msg.as_string())
 
 
@@ -238,7 +238,7 @@ def main():
         mailinglist_msg = MIMEText(mailinglist_txt)
         mailinglist_msg['Subject'] = '[Bits] ANSWER!'
         mailinglist_msg['From'] = '<' + init.config.get('Smtp', 'self_mail') + '>'
-        mailinglist_msg['To'] = '<' + init.config.get('Smtp', 'mailinglist') + '>'
+        mailinglist_msg['To'] = '<' + init.config.get('Smtp', 'debug_mail') + '>'
         init.conn_smtp.sendmail(init.config.get('Smtp', 'self_mail'), init.config.get('Smtp', 'debug_mail'), mailinglist_msg.as_string())
 
     init.conn_imap.logout()
