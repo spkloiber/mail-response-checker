@@ -178,7 +178,7 @@ def main():
     debug = ('Time: %s, Mails: %s' % (datetime.datetime.now(), mails))
 
     for mail in mails:
-        print ('Mail: %s, %d' % (mail, len(mail))
+        print ('Mail: %s, %d' % (mail, len(mail)))
         if len(mail) == 0:
             continue
 
