@@ -207,7 +207,7 @@ def main():
             add_mail_to_db(question)
             debug += ('Added to DB: %s, %s\n' % (question.sender, question.id))
 
-		print ('Setting seen flag of %s' % mail)
+        print ('Setting seen flag of %s' % mail)
         init.conn_imap.uid('store', mail, '+FLAGS', '\Seen')
 
     debug_msg = MIMEText(debug)
