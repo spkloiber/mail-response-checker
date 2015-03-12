@@ -99,7 +99,7 @@ def get_new_mails():
 ########################################################################################################################
 def add_mail_to_db(question):
     test = init.session.query(init.Question).get(question.id)
-    if  test != None:
+    if  test == None:
         init.session.add(question)
         init.session.commit()
     else:
