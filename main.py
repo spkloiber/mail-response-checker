@@ -74,11 +74,11 @@ def execute_command(command):
         init.save_config()
         
     elif command.startswith('DELETE: '):
-         res = get_params(command, 'DELETE')
-         for id in res:
+        res = get_params(command, 'DELETE')
+        for id in res:
             del_mail_from_db(id)
     elif command.startswith('ADDIGNORE: '):
-         res = get_params(command, 'ADDIGNORE')
+        res = get_params(command, 'ADDIGNORE')
          
         for id in res:
             init.config.set('Ignore', 'ignore_manual', init.config.get('Ignore', 'ignore_manual') + ' ' + id)
