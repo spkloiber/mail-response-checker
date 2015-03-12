@@ -153,6 +153,7 @@ def get_all_unanswered_long():
     :rtype : list
     """
     date = datetime.datetime.now() - timedelta(days = 2)
+    print ('Date two days before: %s' % date)
     return init.session.query(init.Question).filter(init.Question.is_answered == 0, init.Question.sent_on < date).all()
 
 
