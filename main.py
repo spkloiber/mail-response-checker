@@ -98,9 +98,12 @@ def get_new_mails():
 
 ########################################################################################################################
 def add_mail_to_db(question):
-    if init.session.query(init.Question).get(question.id) != None:
+    test = init.session.query(init.Question).get(question.id)
+    if  test != None:
         init.session.add(question)
         init.session.commit()
+    else:
+        print ('Attention: %s already in db as %s' % (question, test))
     
     
 ########################################################################################################################
