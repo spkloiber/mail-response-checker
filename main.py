@@ -37,7 +37,17 @@ def get_mail_entry(name, data):
 	# a space or a smaller than the group mail is called mail the string ends with a greater than if there 
 	# was a smaller, otherwise with nothing
 	return re.search('%s: (?:.|\s)*?(?:(?P<gt><)| )(?P<mail>[^\s<]+@[^\s>]+)(?(gt)>)' % name, data, re.IGNORECASE).group('mail')
-                                                            
+
+	
+########################################################################################################################
+def get_params(data, command):
+    res = re.search('^%s: (.*)$' % command, data)
+    if res == None:
+        return []
+    
+    return re.split(',\s*', res.group(1))
+    
+	
 ########################################################################################################################                                                            
 def execute_command(command):
     if command == 'UPDATEIGNORE':
@@ -66,14 +76,13 @@ def execute_command(command):
         init.save_config()
         
     elif command.startswith('DELETE: '):
-         res = re.search('DELETE: (.*)', command)
-         if res != None and len(res.groups()) == 1:
-            id = res.group(1)
+        res = get_params(command, 'DELETE')
+        for id in res:
             del_mail_from_db(id)
     elif command.startswith('ADDIGNORE: '):
-         res = re.search('ADDIGNORE: (.*)', command)
-         if res != None and len(res.groups()) == 1:
-            id = res.group(1)
+        res = get_params(command, 'ADDIGNORE')
+         
+        for id in res:
             init.config.set('Ignore', 'ignore_manual', init.config.get('Ignore', 'ignore_manual') + ' ' + id)
             init.save_config()
 
@@ -91,8 +100,12 @@ def get_new_mails():
 
 ########################################################################################################################
 def add_mail_to_db(question):
-    init.session.add(question)
-    init.session.commit()
+    test = init.session.query(init.Question).get(question.id)
+    if  test == None:
+        init.session.add(question)
+        init.session.commit()
+    else:
+        print ('Attention: %s already in db as %s' % (question, test))
     
     
 ########################################################################################################################
