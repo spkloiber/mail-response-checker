@@ -17,13 +17,13 @@ def get_sender(data):
     
 def get_receiver(data):
     return get_mail_entry('To', data[0][1].decode('utf-8'))
-	
+
 def get_subject(data):
     return re.search('Subject: ([^\n\r]*)', data[0][1].decode('utf-8'), re.IGNORECASE).group(1)
     
 def get_in_reply_to(data):
     in_reply_to_tmp = re.search('In-Reply-To: <(.*?)>', data[0][1].decode('utf-8'), re.IGNORECASE)
-    if in_reply_to_tmp != None:
+    if in_reply_to_tmp is not None:
         return in_reply_to_tmp.group(1)
     else:
         return None
@@ -33,23 +33,25 @@ def get_sent_on(data):
                                                             .group(0).encode('utf-8'))[:6])
                                                             
 def get_mail_entry(name, data):
-	# matches the name followed by a colon, then some stuff until the email starts with either
-	# a space or a smaller than the group mail is called mail the string ends with a greater than if there 
-	# was a smaller, otherwise with nothing
-	return re.search('%s:(?:.|\s)*?(?:(?P<gt><)| )(?P<mail>[^\s<]+@[^\s>]+)(?(gt)>)' % name, data, re.IGNORECASE).group('mail')
+    # matches the name followed by a colon, then some stuff until the email starts with either
+    # a space or a smaller than the group mail is called mail the string ends with a greater than if there
+    # was a smaller, otherwise with nothing
+    return re.search('%s:(?:.|\s)*?(?:(?P<gt><)| )(?P<mail>[^\s<]+@[^\s>]+)(?(gt)>)' % name, data, re.IGNORECASE).group('mail')
 
-	
+
 ########################################################################################################################
 def get_params(data, command):
     res = re.search('^%s: (.*)$' % command, data)
-    if res == None:
+    if res is None:
         return []
     
     return re.split(',\s*', res.group(1))
     
-	
+
 ########################################################################################################################                                                            
 def execute_command(command):
+    debug = 'EXECUTE:\n'
+
     if command == 'UPDATEIGNORE':
         debug_msg = MIMEText('')
         debug_msg['Subject'] = init.config.get('Ignore', 'ignore_update_subject')
@@ -92,7 +94,9 @@ def execute_command(command):
             del_mail_from_db(id)
             ret, tmp_mails = init.conn_imap.search(None, 'HEADER Message-Id <%s>' % id)
             mails = tmp_mails[0].decode('utf-8').split(' ')
-            print (evaluate_mails(mails))
+            debug += (evaluate_mails(mails))
+
+    return debug
 
 ########################################################################################################################
 def get_new_mails():
@@ -109,7 +113,7 @@ def get_new_mails():
 ########################################################################################################################
 def add_mail_to_db(question):
     test = init.session.query(init.Question).get(question.id)
-    if  test == None:
+    if  test is None:
         init.session.add(question)
         init.session.commit()
     else:
@@ -208,7 +212,7 @@ def evaluate_mails(mails):
                 debug += ('Answered: %s; Answerer: %s, %s\n' % (in_reply_to, question.sender, question.id))
             elif receiver == init.config.get('Smtp', 'self_mail'):
                 debug += ('Command: %s' % subject)
-                execute_command(subject)
+                debug += execute_command(subject)
 
         else:
             question = create_question_from_mail(mail)
