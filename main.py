@@ -92,7 +92,7 @@ def execute_command(command):
             del_mail_from_db(id)
             ret, tmp_mails = init.conn_imap.search(None, 'HEADER Message-Id <%s>' % id)
             mails = tmp_mails[0].decode('utf-8').split(' ')
-            evaluate_mails(mails)
+            print (evaluate_mails(mails))
 
 ########################################################################################################################
 def get_new_mails():
