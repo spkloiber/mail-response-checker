@@ -85,6 +85,14 @@ def execute_command(command):
         for id in res:
             init.config.set('Ignore', 'ignore_manual', init.config.get('Ignore', 'ignore_manual') + ' ' + id)
             init.save_config()
+    elif command.startswith('REEVALUATE: '):
+        res = get_params(command, 'REEVALUATE')
+
+        for id in res:
+            del_mail_from_db(id)
+            ret, tmp_mails = init.conn_imap.search(None, 'HEADER Message-Id <%s>' % id)
+            mails = tmp_mails[0].decode('utf-8').split(' ')
+            evaluate_mails(mails)
 
 ########################################################################################################################
 def get_new_mails():
@@ -170,10 +178,8 @@ def get_all_unanswered_long():
 #init.connection.uid('store', '4032', '+FLAGS', '\Seen')
 
 
-
 ########################################################################################################################
-def main():
-    mails = get_new_mails()
+def evaluate_mails(mails):
     ignore = init.config.get('Ignore', 'ignore_auto').split(' ')
     ignore.extend(init.config.get('Ignore', 'ignore_manual').split(' '))
 
@@ -203,7 +209,7 @@ def main():
             elif receiver == init.config.get('Smtp', 'self_mail'):
                 debug += ('Command: %s' % subject)
                 execute_command(subject)
-                
+
         else:
             question = create_question_from_mail(mail)
             add_mail_to_db(question)
@@ -211,6 +217,14 @@ def main():
 
         print ('Setting seen flag of %s' % mail)
         init.conn_imap.store(mail, '+FLAGS', '\Seen')
+
+    return debug
+
+
+########################################################################################################################
+def main():
+    mails = get_new_mails()
+    debug = evaluate_mails(mails)
 
     debug_msg = MIMEText(debug)
     debug_msg['Subject'] = 'MAILCHECKER DEBUG'
