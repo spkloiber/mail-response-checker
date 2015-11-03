@@ -13,26 +13,26 @@ def get_id(data):
     return re.search('Message-ID: <(.*?)>', data[0][1].decode('utf-8'), re.IGNORECASE).group(1)
 
 def get_sender(data):
-    sender_tmp = re.search('From:.*?[< ]([^\s<]*@[^\s>]*)>?', data[0][1].decode('utf-8'), re.IGNORECASE)
-    if sender_tmp != None:
-        return sender_tmp.group(1)
-    else:
-        return None
+    return get_mail_entry('From', data[0][1].decode('utf-8'))
     
 def get_receiver(data):
+<<<<<<< HEAD
     result = re.search('To:.*?[< ]([^\s<]*@[^\s>]*)>?', data[0][1].decode('utf-8'), re.IGNORECASE)
     if result == None:
         print ('No receiver')
         return 'No receiver'
 
     return result.group(1)
+=======
+    return get_mail_entry('To', data[0][1].decode('utf-8'))
+>>>>>>> d7cbdb7f6ffb70d025f8599fd19c3cbbc39507b6
 
 def get_subject(data):
     return re.search('Subject: ([^\n\r]*)', data[0][1].decode('utf-8'), re.IGNORECASE).group(1)
     
 def get_in_reply_to(data):
     in_reply_to_tmp = re.search('In-Reply-To: <(.*?)>', data[0][1].decode('utf-8'), re.IGNORECASE)
-    if in_reply_to_tmp != None:
+    if in_reply_to_tmp is not None:
         return in_reply_to_tmp.group(1)
     else:
         return None
@@ -41,18 +41,26 @@ def get_sent_on(data):
     return datetime.datetime(*imaplib.Internaldate2tuple(re.search('INTERNALDATE ".*?"', data[0][0].decode('utf-8'))
                                                             .group(0).encode('utf-8'))[:6])
                                                             
+def get_mail_entry(name, data):
+    # matches the name followed by a colon, then some stuff until the email starts with either
+    # a space or a smaller than the group mail is called mail the string ends with a greater than if there
+    # was a smaller, otherwise with nothing
+    return re.search('%s:(?:.|\s)*?(?:(?P<gt><)| )(?P<mail>[^\s<]+@[^\s>]+)(?(gt)>)' % name, data, re.IGNORECASE).group('mail')
+
 
 ########################################################################################################################
 def get_params(data, command):
     res = re.search('^%s: (.*)$' % command, data)
-    if res == None:
+    if res is None:
         return []
     
     return re.split(',\s*', res.group(1))
     
-    
+
 ########################################################################################################################                                                            
 def execute_command(command):
+    debug = 'EXECUTE:\n'
+
     if command == 'UPDATEIGNORE':
         debug_msg = MIMEText('')
         debug_msg['Subject'] = init.config.get('Ignore', 'ignore_update_subject')
@@ -72,7 +80,7 @@ def execute_command(command):
         mails = mails[0].decode('utf-8').split(' ')[0]
         
         text = init.conn_imap.fetch(mails, 'BODY.PEEK[TEXT]')
-        init.conn_imap.uid('store', mails, '+FLAGS', '\Seen')
+        init.conn_imap.store(mails, '+FLAGS', '\Seen')
 
         res = re.search('((?:[^\s]+@[^\s]+\s+)+)', text[1][0][1].decode('utf-8')).group(0) 
 
@@ -92,6 +100,16 @@ def execute_command(command):
         for id in res:
             init.config.set('Ignore', 'ignore_manual', init.config.get('Ignore', 'ignore_manual') + ' ' + id)
             init.save_config()
+    elif command.startswith('REEVALUATE: '):
+        res = get_params(command, 'REEVALUATE')
+
+        for id in res:
+            del_mail_from_db(id)
+            ret, tmp_mails = init.conn_imap.search(None, 'HEADER Message-Id <%s>' % id)
+            mails = tmp_mails[0].decode('utf-8').split(' ')
+            debug += (evaluate_mails(mails))
+
+    return debug
 
         return 'Success'
     else:
@@ -112,7 +130,7 @@ def get_new_mails():
 ########################################################################################################################
 def add_mail_to_db(question):
     test = init.session.query(init.Question).get(question.id)
-    if  test == None:
+    if  test is None:
         init.session.add(question)
         init.session.commit()
     else:
@@ -122,6 +140,7 @@ def add_mail_to_db(question):
 ########################################################################################################################
 def del_mail_from_db(mail_id):
     init.session.execute("DELETE FROM questions WHERE id='%s'" % mail_id)
+    init.session.commit()
 
 
 ########################################################################################################################
@@ -163,6 +182,7 @@ def get_all_unanswered_long():
     :rtype : list
     """
     date = datetime.datetime.now() - timedelta(days = 2)
+    print ('Date two days before: %s' % date)
     return init.session.query(init.Question).filter(init.Question.is_answered == 0, init.Question.sent_on < date).all()
 
 
@@ -179,17 +199,15 @@ def get_all_unanswered_long():
 #init.connection.uid('store', '4032', '+FLAGS', '\Seen')
 
 
-
 ########################################################################################################################
-def main():
-    mails = get_new_mails()
+def evaluate_mails(mails):
     ignore = init.config.get('Ignore', 'ignore_auto').split(' ')
     ignore.extend(init.config.get('Ignore', 'ignore_manual').split(' '))
 
-    debug = ('Time: %s, Mails: %s' % (datetime.datetime.now(), mails))
+    debug = ('Time: %s, Mails: %s\n' % (datetime.datetime.now(), mails))
 
     for mail in mails:
-        print ('Mail: %s' % mail)
+        print ('Mail: %s, %d' % (mail, len(mail)))
         if len(mail) == 0:
             continue
 
@@ -212,17 +230,21 @@ def main():
             elif receiver == init.config.get('Smtp', 'self_mail'):
                 #case: sent to bot directly -> command to bot
                 debug += ('Command: %s  Status: %s' % (subject, execute_command(subject)))
-                
         else:
-            if subject.contains('[ SPAM? ]')
+            if !subject.contains('[ SPAM? ]')
                 question = create_question_from_mail(mail)
                 add_mail_to_db(question)
                 debug += ('Added to DB: %s, %s\n' % (question.sender, question.id))
 
         print ('Storing seen flag of %s %s' % (mail, subject))
         init.conn_imap.uid('store', mail, '+FLAGS', '\Seen')
-    ### rof
+    return debug
 
+
+########################################################################################################################
+def main():
+    mails = get_new_mails()
+    debug = evaluate_mails(mails)
 
     #### mail to debug person
     debug_msg = MIMEText(debug)
@@ -249,7 +271,7 @@ def main():
     unanswered_long = get_all_unanswered_long()
     if len(unanswered_long) > 0:
         mailinglist_txt = 'List of messages not answered for more than 2 days:\n'
-        for question in unanswered:
+        for question in unanswered_long:
             mailinglist_txt += question.__repr__() + '\n'
 
         mailinglist_msg = MIMEText(mailinglist_txt)
@@ -258,9 +280,7 @@ def main():
         mailinglist_msg['To'] = '<' + init.config.get('Smtp', 'mailinglist') + '>'
         #init.conn_smtp.sendmail(init.config.get('Smtp', 'self_mail'), init.config.get('Smtp', 'mailinglist'), mailinglist_msg.as_string())
 
-    init.conn_imap.logout()
-    init.conn_smtp.close()
-    init.session.close()
+    init.close()
 
 
 # from email.mime.text import MIMEText

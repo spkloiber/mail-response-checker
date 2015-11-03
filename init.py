@@ -62,6 +62,13 @@ conn_smtp.login(config.get('Smtp', 'username'), config.get('Smtp', 'password'))
 
 
 ########################################################################################################################
+def close():
+    conn_imap.logout()
+    conn_smtp.close()
+    session.close()
+
+    
+########################################################################################################################
 def save_config():
     with open(config_filename, 'w') as configfile:
         config.write(configfile)
