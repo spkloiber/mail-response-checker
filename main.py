@@ -20,7 +20,12 @@ def get_sender(data):
         return None
     
 def get_receiver(data):
-    return re.search('To:.*?[< ]([^\s<]*@[^\s>]*)>?', data[0][1].decode('utf-8'), re.IGNORECASE).group(1)
+    result = re.search('To:.*?[< ]([^\s<]*@[^\s>]*)>?', data[0][1].decode('utf-8'), re.IGNORECASE)
+    if result == None:
+        print ('No receiver')
+        return 'No receiver'
+
+    return result.group(1)
 
 def get_subject(data):
     return re.search('Subject: ([^\n\r]*)', data[0][1].decode('utf-8'), re.IGNORECASE).group(1)
@@ -58,8 +63,11 @@ def execute_command(command):
         
         ret, mails = init.conn_imap.search(None, 'UNSEEN', 'FROM '+init.config.get('Smtp', 'mailinglist_owner'), 'TO '+init.config.get('Smtp', 'self_mail'))
         print (mails)
+        print ('FROM '+init.config.get('Smtp', 'mailinglist_owner'))
+        print('TO '+init.config.get('Smtp', 'self_mail'))
         if len(mails[0]) == 0:
-            print ('DID NOT RECEIVE IGNORE')
+            print ('Error: DID NOT RECEIVE IGNORE')
+            return 'Error: Did not receive Ignore Mail'
             
         mails = mails[0].decode('utf-8').split(' ')[0]
         
@@ -77,12 +85,17 @@ def execute_command(command):
         res = get_params(command, 'DELETE')
         for id in res:
             del_mail_from_db(id)
+        return 'Success'
     elif command.startswith('ADDIGNORE: '):
         res = get_params(command, 'ADDIGNORE')
          
         for id in res:
             init.config.set('Ignore', 'ignore_manual', init.config.get('Ignore', 'ignore_manual') + ' ' + id)
             init.save_config()
+
+        return 'Success'
+    else:
+        return 'Error: Invalid Command'
 
 ########################################################################################################################
 def get_new_mails():
@@ -91,7 +104,7 @@ def get_new_mails():
 
     print('Mails:')
     for mail in mails:
-        print('%s' % mail)
+        print('%s \n %s' % (mail, init.conn_imap.fetch(mail, 'FLAGS')))
 
     return mails
 
@@ -197,23 +210,29 @@ def main():
                 mail_answered(in_reply_to, question)
                 debug += ('Answered: %s; Answerer: %s, %s\n' % (in_reply_to, question.sender, question.id))
             elif receiver == init.config.get('Smtp', 'self_mail'):
-                debug += ('Command: %s' % subject)
-                execute_command(subject)
+                #case: sent to bot directly -> command to bot
+                debug += ('Command: %s  Status: %s' % (subject, execute_command(subject)))
                 
         else:
-            question = create_question_from_mail(mail)
-            add_mail_to_db(question)
-            debug += ('Added to DB: %s, %s\n' % (question.sender, question.id))
+            if subject.contains('[ SPAM? ]')
+                question = create_question_from_mail(mail)
+                add_mail_to_db(question)
+                debug += ('Added to DB: %s, %s\n' % (question.sender, question.id))
 
+        print ('Storing seen flag of %s %s' % (mail, subject))
         init.conn_imap.uid('store', mail, '+FLAGS', '\Seen')
+    ### rof
 
+
+    #### mail to debug person
     debug_msg = MIMEText(debug)
     debug_msg['Subject'] = 'MAILCHECKER DEBUG'
     debug_msg['From'] = '<' + init.config.get('Smtp', 'self_mail') + '>'
     debug_msg['To'] = '<' + init.config.get('Smtp', 'debug_mail') + '>'
-    init.conn_smtp.sendmail(init.config.get('Smtp', 'self_mail'), init.config.get('Smtp', 'debug_mail'), debug_msg.as_string())
+    #init.conn_smtp.sendmail(init.config.get('Smtp', 'self_mail'), init.config.get('Smtp', 'debug_mail'), debug_msg.as_string())
 
 
+    #### daily answer status to master and debug
     unanswered = get_all_unanswered()
     master_txt = 'List of unanswered messages:\n'
     for question in unanswered:
@@ -223,9 +242,10 @@ def main():
     master_msg['Subject'] = '[Bits] DAILY ANSWER STATUS'
     master_msg['From'] = '<' + init.config.get('Smtp', 'self_mail') + '>'
     master_msg['To'] = '<' + init.config.get('Smtp', 'master_mail') + '>'
-    init.conn_smtp.sendmail(init.config.get('Smtp', 'self_mail'), [init.config.get('Smtp', 'master_mail'),init.config.get('Smtp', 'debug_mail')] , master_msg.as_string())
+    #init.conn_smtp.sendmail(init.config.get('Smtp', 'self_mail'), [init.config.get('Smtp', 'master_mail'),init.config.get('Smtp', 'debug_mail')] , master_msg.as_string())
 
 
+    #### messages not answered for more than 2 days to mailing list
     unanswered_long = get_all_unanswered_long()
     if len(unanswered_long) > 0:
         mailinglist_txt = 'List of messages not answered for more than 2 days:\n'
@@ -236,7 +256,7 @@ def main():
         mailinglist_msg['Subject'] = '[Bits] ANSWER!'
         mailinglist_msg['From'] = '<' + init.config.get('Smtp', 'self_mail') + '>'
         mailinglist_msg['To'] = '<' + init.config.get('Smtp', 'mailinglist') + '>'
-        init.conn_smtp.sendmail(init.config.get('Smtp', 'self_mail'), init.config.get('Smtp', 'mailinglist'), mailinglist_msg.as_string())
+        #init.conn_smtp.sendmail(init.config.get('Smtp', 'self_mail'), init.config.get('Smtp', 'mailinglist'), mailinglist_msg.as_string())
 
     init.conn_imap.logout()
     init.conn_smtp.close()
