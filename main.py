@@ -105,9 +105,7 @@ def execute_command(command):
             mails = tmp_mails[0].decode('utf-8').split(' ')
             debug += (evaluate_mails(mails))
 
-    return debug
-
-        return 'Success'
+        return debug + ' Success'
     else:
         return 'Error: Invalid Command'
 
