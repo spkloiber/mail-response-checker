@@ -225,7 +225,7 @@ def evaluate_mails(mails):
                 #case: sent to bot directly -> command to bot
                 debug += ('Command: %s  Status: %s' % (subject, execute_command(subject)))
         else:
-            if not(subject.contains('[ SPAM? ]'))
+            if not subject.contains('[ SPAM? ]'):
                 question = create_question_from_mail(mail)
                 add_mail_to_db(question)
                 debug += ('Added to DB: %s, %s\n' % (question.sender, question.id))
