@@ -16,16 +16,12 @@ def get_sender(data):
     return get_mail_entry('From', data[0][1].decode('utf-8'))
     
 def get_receiver(data):
-<<<<<<< HEAD
     result = re.search('To:.*?[< ]([^\s<]*@[^\s>]*)>?', data[0][1].decode('utf-8'), re.IGNORECASE)
     if result == None:
         print ('No receiver')
         return 'No receiver'
 
     return result.group(1)
-=======
-    return get_mail_entry('To', data[0][1].decode('utf-8'))
->>>>>>> d7cbdb7f6ffb70d025f8599fd19c3cbbc39507b6
 
 def get_subject(data):
     return re.search('Subject: ([^\n\r]*)', data[0][1].decode('utf-8'), re.IGNORECASE).group(1)
