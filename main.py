@@ -259,7 +259,7 @@ def main():
     master_msg['Subject'] = '[Bits] DAILY ANSWER STATUS'
     master_msg['From'] = '<' + init.config.get('Smtp', 'self_mail') + '>'
     master_msg['To'] = '<' + init.config.get('Smtp', 'master_mail') + '>'
-    #init.conn_smtp.sendmail(init.config.get('Smtp', 'self_mail'), [init.config.get('Smtp', 'master_mail'),init.config.get('Smtp', 'debug_mail')] , master_msg.as_string())
+    init.conn_smtp.sendmail(init.config.get('Smtp', 'self_mail'), [init.config.get('Smtp', 'master_mail'),init.config.get('Smtp', 'debug_mail')] , master_msg.as_string())
 
 
     #### messages not answered for more than 2 days to mailing list
@@ -273,7 +273,7 @@ def main():
         mailinglist_msg['Subject'] = '[Bits] ANSWER!'
         mailinglist_msg['From'] = '<' + init.config.get('Smtp', 'self_mail') + '>'
         mailinglist_msg['To'] = '<' + init.config.get('Smtp', 'mailinglist') + '>'
-        #init.conn_smtp.sendmail(init.config.get('Smtp', 'self_mail'), init.config.get('Smtp', 'mailinglist'), mailinglist_msg.as_string())
+        init.conn_smtp.sendmail(init.config.get('Smtp', 'self_mail'), init.config.get('Smtp', 'mailinglist'), mailinglist_msg.as_string())
 
     init.close()
 
