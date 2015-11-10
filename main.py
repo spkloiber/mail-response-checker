@@ -231,7 +231,8 @@ def evaluate_mails(mails):
                 debug += ('Added to DB: %s, %s\n' % (question.sender, question.id))
 
         print ('Storing seen flag of %s %s' % (mail, subject))
-        init.conn_imap.uid('store', mail, '+FLAGS', '\Seen')
+        #init.conn_imap.uid('store', mail, '+FLAGS', '\Seen')
+        init.conn_imap.store(mail, '+FLAGS', '\Seen')
     return debug
 
 
